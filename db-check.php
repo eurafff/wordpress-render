@@ -1,24 +1,38 @@
 <?php
-echo "<h3>Teste de Conexão</h3>";
-$host = getenv('WORDPRESS_DB_HOST');
-$user = getenv('WORDPRESS_DB_USER');
-$pass = getenv('WORDPRESS_DB_PASSWORD');
-$db   = getenv('WORDPRESS_DB_NAME');
+echo "<h3>Diagnóstico de Variáveis</h3>";
 
-echo "Tentando conectar ao Host: <b>$host</b> <br>";
-echo "Com o usuário: <b>$user</b> <br>";
+$vars = [
+    'WORDPRESS_DB_HOST',
+    'WORDPRESS_DB_USER',
+    'WORDPRESS_DB_PASSWORD',
+    'WORDPRESS_DB_NAME'
+];
 
-$conn = mysqli_init();
-if (!$conn) {
-    die("mysqli_init falhou");
+foreach ($vars as $v) {
+    $val = getenv($v);
+    if ($val) {
+        if ($v === 'WORDPRESS_DB_PASSWORD') {
+            echo "✅ $v: Configurada (Senha Oculta)<br>";
+        } else {
+            echo "✅ $v: <b>$val</b><br>";
+        }
+    } else {
+        echo "<b style='color:red'>❌ $v: NÃO ENCONTRADA!</b> (Adicione no painel do Render)<br>";
+    }
 }
 
-mysqli_ssl_set($conn, NULL, NULL, NULL, NULL, NULL);
-
-if (mysqli_real_connect($conn, $host, $user, $pass, $db, null, null, MYSQLI_CLIENT_SSL)) {
-    echo "<h2 style='color:green'>✅ CONECTADO COM SUCESSO!</h2>";
+if (!getenv('WORDPRESS_DB_HOST')) {
+    echo "<br><div style='background:#ff0;padding:10px;'><b>Ação necessária:</b> Vá no painel do Render > Environment e adicione as variáveis acima.</div>";
 } else {
-    echo "<h2 style='color:red'>❌ FALHA NA CONEXÃO:</h2>";
-    echo "Erro: " . mysqli_connect_error();
+    echo "<h3>Testando Conexão Real...</h3>";
+    $conn = mysqli_init();
+    mysqli_ssl_set($conn, NULL, NULL, NULL, NULL, NULL);
+    $res = @mysqli_real_connect($conn, getenv('WORDPRESS_DB_HOST'), getenv('WORDPRESS_DB_USER'), getenv('WORDPRESS_DB_PASSWORD'), getenv('WORDPRESS_DB_NAME'), null, null, MYSQLI_CLIENT_SSL);
+    
+    if ($res) {
+        echo "<h2 style='color:green'>✅ TUDO OK! O banco conectou.</h2>";
+    } else {
+        echo "<h2 style='color:red'>❌ ERRO DE CONEXÃO:</h2> " . mysqli_connect_error();
+    }
 }
 ?>
